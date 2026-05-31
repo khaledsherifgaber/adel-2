@@ -277,28 +277,12 @@ def format_money(value) -> str:
         return "N/A"
 
 
-def get_mistral_key() -> str | None:
+def get_mistral_key() -> str:
     """
-    Streamlit Cloud:
-    Add this in App settings → Secrets:
-
-    MISTRAL_API_KEY = "MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"
-
-    Local development:
-    Add the same value in .streamlit/secrets.toml
-    or set an environment variable named MISTRAL_API_KEY.
+    Direct hardcoded API key version.
+    This is simple, but not secure for public GitHub repositories.
     """
-    try:
-        if "MISTRAL_API_KEY" in st.secrets:
-            return st.secrets["MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"]
-
-        if "MISTRAL_KEY" in st.secrets:
-            return st.secrets["MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"]
-
-    except Exception:
-        pass
-
-    return os.getenv("MISTRAL_API_KEY")
+    return "MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -345,6 +329,7 @@ def init_db():
 
 def get_all_startups():
     conn = sqlite3.connect(DB_PATH)
+
     df = pd.read_sql_query(
         """
         SELECT 
@@ -361,6 +346,7 @@ def get_all_startups():
         """,
         conn,
     )
+
     conn.close()
     return df
 
@@ -368,6 +354,7 @@ def get_all_startups():
 def get_startup_by_id(sid):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+
     c.execute("SELECT * FROM startups WHERE id = ?", (sid,))
     row = c.fetchone()
 
@@ -376,6 +363,7 @@ def get_startup_by_id(sid):
         return None
 
     cols = [d[0] for d in c.description]
+
     conn.close()
     return dict(zip(cols, row))
 
@@ -438,6 +426,7 @@ def save_startup(data: dict):
     conn.commit()
     sid = c.lastrowid
     conn.close()
+
     return sid
 
 
@@ -461,7 +450,9 @@ def update_evaluation(sid, result_json):
 def delete_startup(sid):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+
     c.execute("DELETE FROM startups WHERE id = ?", (sid,))
+
     conn.commit()
     conn.close()
 
@@ -551,13 +542,6 @@ Use this exact structure:
 def call_mistral(prompt: str) -> str:
     mistral_key = get_mistral_key()
 
-    if not mistral_key:
-        st.error(
-            "MISTRAL_API_KEY is missing. Add it in Streamlit Cloud → App settings → Secrets, "
-            "or add it locally in .streamlit/secrets.toml."
-        )
-        st.stop()
-
     headers = {
         "Authorization": f"Bearer {mistral_key}",
         "Content-Type": "application/json",
@@ -611,6 +595,7 @@ def evaluate_startup(s: dict) -> dict:
 
     try:
         return json.loads(raw)
+
     except json.JSONDecodeError:
         start = raw.find("{")
         end = raw.rfind("}")
@@ -734,6 +719,7 @@ def render_evaluation(ev: dict):
                 '<div class="section-label">Strengths</div>',
                 unsafe_allow_html=True,
             )
+
             for item in ev.get("strengths", []):
                 st.markdown(
                     f'<div class="advice-block advice-success">✦ {escape_html(item)}</div>',
@@ -745,6 +731,7 @@ def render_evaluation(ev: dict):
                 '<div class="section-label">Weaknesses</div>',
                 unsafe_allow_html=True,
             )
+
             for item in ev.get("weaknesses", []):
                 st.markdown(
                     f'<div class="advice-block advice-danger">◇ {escape_html(item)}</div>',
@@ -972,6 +959,7 @@ if page == "📋 All Startups":
                 if pd.notna(row["last_evaluated"]) and row["last_evaluated"]
                 else "⏳ Pending"
             )
+
             ev_color = "#22d3a4" if "Evaluated" in ev_status else "#f59e0b"
 
             funding = (
