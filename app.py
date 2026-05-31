@@ -290,10 +290,10 @@ def get_mistral_key() -> str | None:
     """
     try:
         if "MISTRAL_API_KEY" in st.secrets:
-            return st.secrets["MISTRAL_API_KEY"]
+            return st.secrets["MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"]
 
         if "MISTRAL_KEY" in st.secrets:
-            return st.secrets["MISTRAL_KEY"]
+            return st.secrets["MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"]
 
     except Exception:
         pass
