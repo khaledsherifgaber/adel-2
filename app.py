@@ -5,7 +5,6 @@ import json
 import base64
 import tempfile
 from pathlib import Path
-from mistralai import Mistral
 import pandas as pd
 from datetime import datetime
 import io
