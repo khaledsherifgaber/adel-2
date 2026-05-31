@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import uuid
 from datetime import datetime
-from mistralai import Mistral
+import requests
 
 # ─────────────────────────────────────────────
 # Page config
@@ -138,10 +138,25 @@ div[data-testid="metric-container"] {
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# Mistral client — hardcoded key
+# Mistral — requests-based (no extra package needed)
 # ─────────────────────────────────────────────
 MISTRAL_KEY = "MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"
-mistral_client = Mistral(api_key=MISTRAL_KEY)
+
+def mistral_chat(prompt: str, max_tokens: int = 2000) -> str:
+    resp = requests.post(
+        "https://api.mistral.ai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {MISTRAL_KEY}", "Content-Type": "application/json"},
+        json={
+            "model": "mistral-large-latest",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.3,
+            "max_tokens": max_tokens,
+        },
+        timeout=120,
+    )
+    if resp.status_code != 200:
+        raise Exception(f"Mistral API error {resp.status_code}: {resp.text}")
+    return resp.json()["choices"][0]["message"]["content"]
 
 # ─────────────────────────────────────────────
 # Demo data
@@ -269,15 +284,7 @@ Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
   "overall_analysis": "1-paragraph portfolio-level analysis of the matches"
 }}"""
 
-    response = mistral_client.chat.complete(
-        model="mistral-large-latest",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=2000,
-    )
-
-    raw = response.choices[0].message.content.strip()
-    # Strip accidental markdown fences
+    raw = mistral_chat(prompt).strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
