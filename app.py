@@ -182,6 +182,22 @@ h1, h2, h3, h4 {
     margin-left: 0.3rem;
 }
 
+.file-badge {
+    background: #1a1a26;
+    border: 1px solid #252535;
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    display: inline-block;
+    margin: 0.15rem;
+    color: #e8e8f0;
+}
+
+.no-files {
+    color: #3d3d50;
+    font-size: 0.8rem;
+}
+
 .stButton > button {
     background: linear-gradient(135deg, var(--accent), #6040e0) !important;
     color: white !important;
@@ -263,22 +279,26 @@ def format_money(value) -> str:
 
 def get_mistral_key() -> str | None:
     """
-    Recommended:
-    .streamlit/secrets.toml
+    Streamlit Cloud:
+    Add this in App settings → Secrets:
 
-    MISTRAL_API_KEY = "your_real_key_here"
+    MISTRAL_API_KEY = "MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"
 
-    Alternative:
-    export MISTRAL_API_KEY="your_real_key_here"
+    Local development:
+    Add the same value in .streamlit/secrets.toml
+    or set an environment variable named MISTRAL_API_KEY.
     """
     try:
-        return (
-            st.secrets.get("MISTRAL_API_KEY")
-            or st.secrets.get("MISTRAL_KEY")
-            or os.getenv("MISTRAL_API_KEY")
-        )
+        if "MISTRAL_API_KEY" in st.secrets:
+            return st.secrets["MISTRAL_API_KEY"]
+
+        if "MISTRAL_KEY" in st.secrets:
+            return st.secrets["MISTRAL_KEY"]
+
     except Exception:
-        return os.getenv("MISTRAL_API_KEY")
+        pass
+
+    return os.getenv("MISTRAL_API_KEY")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -532,9 +552,11 @@ def call_mistral(prompt: str) -> str:
     mistral_key = get_mistral_key()
 
     if not mistral_key:
-        raise ValueError(
-            "MISTRAL_API_KEY not found. Add it to .streamlit/secrets.toml or set it as an environment variable."
+        st.error(
+            "MISTRAL_API_KEY is missing. Add it in Streamlit Cloud → App settings → Secrets, "
+            "or add it locally in .streamlit/secrets.toml."
         )
+        st.stop()
 
     headers = {
         "Authorization": f"Bearer {mistral_key}",
@@ -603,14 +625,6 @@ def evaluate_startup(s: dict) -> dict:
 # ─────────────────────────────────────────────────────────────
 # UI helpers
 # ─────────────────────────────────────────────────────────────
-def score_color(score):
-    if score >= 70:
-        return "score-high"
-    if score >= 40:
-        return "score-mid"
-    return "score-low"
-
-
 def render_score_bar(label, value, max_val=10):
     try:
         value = float(value)
@@ -1252,19 +1266,15 @@ elif page == "🔍 Evaluate" or st.session_state.get("page_override") == "🔍 E
             if startup.get("product_demo"):
                 files.append("🎬 Demo")
 
-            file_badges = (
-                "".join(
-                    f"""
-                    <span style="background:#1a1a26;border:1px solid #252535;
-                    border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;">
-                    {escape_html(item)}
-                    </span>
-                    """
-                    for item in files
+            if files:
+                file_badges = "".join(
+                    [
+                        f'<span class="file-badge">{escape_html(item)}</span>'
+                        for item in files
+                    ]
                 )
-                if files
-                else '<span style="color:#3d3d50;font-size:0.8rem;">No files uploaded</span>'
-            )
+            else:
+                file_badges = '<span class="no-files">No files uploaded</span>'
 
             st.markdown(
                 f"""
