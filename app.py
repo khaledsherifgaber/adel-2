@@ -418,7 +418,7 @@ def delete_startup(sid):
     conn.close()
 
 # ── Mistral AI ────────────────────────────────────────────────────────────────
-MISTRAL_KEY = st.secrets.get("MpDjSDtazDWPTD1v75zLhpY77rAFF0qI", "")
+MISTRAL_KEY = st.secrets["MpDjSDtazDWPTD1v75zLhpY77rAFF0qI"]
 def build_prompt(s: dict) -> str:
     files_present = []
     if s.get('pitch_deck'):        files_present.append("Pitch Deck")
